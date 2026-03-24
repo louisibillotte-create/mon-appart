@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, Legend, ReferenceLine,
 } from 'recharts'
 import { AMORTISSEMENT } from '../../data/amortissement'
-import { useData } from '../../context/DataContext'
+import { useData, ProvisionsCategorie, PROVISIONS_CATEGORIES } from '../../context/DataContext'
 import { formatEUR } from '../../utils/format'
 
 const card: React.CSSProperties = {
@@ -56,6 +56,7 @@ interface FiscalRow {
   year: number
   revenusBruts: number
   chargesDeductibles: number
+  provisionsComposants: number
   amortBien: number
   amortMobilier: number
   resultat: number
@@ -65,7 +66,13 @@ interface FiscalRow {
   gainVsMicroFoncier: number
 }
 
-function computeFiscalRows(params: LMNPParams, loyer: number, chargesAnnuelles: number): FiscalRow[] {
+function computeFiscalRows(
+  params: LMNPParams,
+  loyer: number,
+  chargesAnnuelles: number,
+  provisions: Record<ProvisionsCategorie, Record<number, number>>,
+): FiscalRow[] {
+  const cats = Object.keys(PROVISIONS_CATEGORIES) as ProvisionsCategorie[]
   const rows: FiscalRow[] = []
   let deficitCumul = 0
 
@@ -77,13 +84,14 @@ function computeFiscalRows(params: LMNPParams, loyer: number, chargesAnnuelles: 
     const assurance = 558 // emprunteur 220 + PNO 338
     const copro = 1700
     const chargesDeductibles = Math.round(interets + assurance + copro + (chargesAnnuelles - copro))
+    const provisionsComposants = cats.reduce((s, c) => s + (provisions[c]?.[year] ?? 0), 0)
 
     const amortBien = Math.round(params.valeurAmortissable / params.dureeAmortBien)
     const amortMobilier = year <= 2025 + params.dureeAmortMobilier - 1
       ? Math.round(params.valeurMobilier / params.dureeAmortMobilier)
       : 0
 
-    const resultatBrut = revenusBruts - chargesDeductibles - amortBien - amortMobilier
+    const resultatBrut = revenusBruts - chargesDeductibles - provisionsComposants - amortBien - amortMobilier
 
     // En LMNP non-pro : déficit reportable sur revenus locatifs futurs uniquement
     let assietteFiscale = 0
@@ -106,6 +114,7 @@ function computeFiscalRows(params: LMNPParams, loyer: number, chargesAnnuelles: 
       year,
       revenusBruts,
       chargesDeductibles,
+      provisionsComposants,
       amortBien,
       amortMobilier,
       resultat: resultatBrut,
@@ -141,7 +150,7 @@ const TMI_OPTIONS = [
 ]
 
 export default function Fiscal() {
-  const { loyer, chargesAnnuelles } = useData()
+  const { loyer, chargesAnnuelles, provisions } = useData()
 
   const [params, setParams] = useState<LMNPParams>({
     valeurAmortissable: 286000,
@@ -152,8 +161,8 @@ export default function Fiscal() {
   })
 
   const rows = useMemo(
-    () => computeFiscalRows(params, loyer, chargesAnnuelles),
-    [params, loyer, chargesAnnuelles]
+    () => computeFiscalRows(params, loyer, chargesAnnuelles, provisions),
+    [params, loyer, chargesAnnuelles, provisions]
   )
 
   const chartData = rows.map(r => ({
@@ -171,7 +180,7 @@ export default function Fiscal() {
     cols: amortOptions.map(tauxAmort => {
       const duree = Math.round(1 / tauxAmort)
       const testParams = { ...params, tmi, dureeAmortBien: duree }
-      const testRows = computeFiscalRows(testParams, loyer, chargesAnnuelles)
+      const testRows = computeFiscalRows(testParams, loyer, chargesAnnuelles, provisions)
       return testRows.slice(0, 10).reduce((s, r) => s + r.impot, 0)
     }),
   }))
@@ -301,7 +310,7 @@ export default function Fiscal() {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
             <thead>
               <tr>
-                {['Année', 'Revenus bruts', 'Charges déduc.', 'Amort. bien', 'Amort. mobilier', 'Résultat', 'Impôt dû', 'Gain vs micro'].map(h => (
+                {['Année', 'Revenus bruts', 'Charges déduc.', 'Prov. composants', 'Amort. bien', 'Amort. mobilier', 'Résultat', 'Impôt dû', 'Gain vs micro'].map(h => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
               </tr>
@@ -312,6 +321,9 @@ export default function Fiscal() {
                   <td style={tdS(i, '#94a3b8')}>{r.year}</td>
                   <td style={tdS(i, '#10b981')}>{formatEUR(r.revenusBruts)}</td>
                   <td style={tdS(i, '#ef4444')}>{formatEUR(-r.chargesDeductibles)}</td>
+                  <td style={tdS(i, r.provisionsComposants > 0 ? '#f59e0b' : '#475569')}>
+                    {r.provisionsComposants > 0 ? formatEUR(-r.provisionsComposants) : '—'}
+                  </td>
                   <td style={tdS(i, '#ef4444')}>{formatEUR(-r.amortBien)}</td>
                   <td style={tdS(i, r.amortMobilier > 0 ? '#ef4444' : '#475569')}>{r.amortMobilier > 0 ? formatEUR(-r.amortMobilier) : '—'}</td>
                   <td style={tdS(i, r.resultat >= 0 ? '#10b981' : '#6366f1')}>{formatEUR(r.resultat)}</td>
@@ -324,7 +336,7 @@ export default function Fiscal() {
                 <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 700, color: '#10b981', background: '#0f1117' }}>
                   {formatEUR(rows.reduce((s, r) => s + r.revenusBruts, 0))}
                 </td>
-                <td colSpan={3} style={{ background: '#0f1117' }} />
+                <td colSpan={4} style={{ background: '#0f1117' }} />
                 <td style={{ background: '#0f1117' }} />
                 <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 700, color: '#ef4444', background: '#0f1117' }}>
                   {formatEUR(rows.reduce((s, r) => s + r.impot, 0))}
