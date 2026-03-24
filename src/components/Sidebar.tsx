@@ -12,6 +12,7 @@ const analyseLinks = [
   { to: '/deepdive/charges', label: 'Charges réelles', icon: '📋' },
   { to: '/deepdive/fiscal', label: 'Fiscal LMNP', icon: '🧾' },
   { to: '/deepdive/alternatives', label: 'vs Alternatives', icon: '⚖️' },
+  { to: '/deepdive/provisions', label: 'Provisions', icon: '🔧' },
 ]
 
 const navLinkStyle = ({ isActive }: { isActive: boolean }) => ({

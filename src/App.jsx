@@ -10,6 +10,7 @@ import Amortissement from './pages/deepdive/Amortissement'
 import Charges from './pages/deepdive/Charges'
 import Fiscal from './pages/deepdive/Fiscal'
 import Alternatives from './pages/deepdive/Alternatives'
+import Provisions from './pages/deepdive/Provisions'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
               <Route path="/deepdive/charges" element={<Charges />} />
               <Route path="/deepdive/fiscal" element={<Fiscal />} />
               <Route path="/deepdive/alternatives" element={<Alternatives />} />
+              <Route path="/deepdive/provisions" element={<Provisions />} />
             </Routes>
           </main>
         </div>

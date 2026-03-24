@@ -48,6 +48,37 @@ export const DEFAULT_LOYER = 1390
 export const DEFAULT_CHARGES_ANNUELLES = 3000
 export const DEFAULT_CHARGES_EXCEPT_2025 = -4844
 
+export type ProvisionsCategorie =
+  | 'amenagements_interieurs'
+  | 'etancheite'
+  | 'gros_oeuvre'
+  | 'installation_electrique'
+  | 'toiture'
+  | 'inventaire_mobilier'
+
+export const PROVISIONS_CATEGORIES: Record<ProvisionsCategorie, string> = {
+  amenagements_interieurs: 'Aménagements intérieurs',
+  etancheite: 'Etanchéité',
+  gros_oeuvre: 'Gros oeuvre',
+  installation_electrique: 'Installation électrique',
+  toiture: 'Toiture',
+  inventaire_mobilier: 'Inventaire mobilier',
+}
+
+export const PROVISIONS_YEARS = Array.from({ length: 22 }, (_, i) => 2025 + i) // 2025–2046
+
+function buildDefaultProvisions(): Record<ProvisionsCategorie, Record<number, number>> {
+  const cats = Object.keys(PROVISIONS_CATEGORIES) as ProvisionsCategorie[]
+  const result = {} as Record<ProvisionsCategorie, Record<number, number>>
+  for (const cat of cats) {
+    result[cat] = {}
+    for (const y of PROVISIONS_YEARS) result[cat][y] = 0
+  }
+  return result
+}
+
+export const DEFAULT_PROVISIONS = buildDefaultProvisions()
+
 export interface EnrichissementDetail {
   capitalRembourse: number
   variationValeur: number
@@ -80,6 +111,7 @@ interface DataState {
   chargesAnnuelles: number
   chargesExcept2025: number
   gainsFiscaux: Record<number, number>
+  provisions: Record<ProvisionsCategorie, Record<number, number>>
 }
 
 function calcPropertyValue(date: string, scenario: ScenarioKey, rates: AnnualRate[]): number {
@@ -165,6 +197,7 @@ interface DataContextType {
   chargesAnnuelles: number
   chargesExcept2025: number
   gainsFiscaux: Record<number, number>
+  provisions: Record<ProvisionsCategorie, Record<number, number>>
 
   setAnnualRates: (rates: AnnualRate[]) => void
   setCashflowResident: (cf: Record<number, number>) => void
@@ -172,6 +205,7 @@ interface DataContextType {
   setChargesAnnuelles: (v: number) => void
   setChargesExcept2025: (v: number) => void
   setGainsFiscaux: (gf: Record<number, number>) => void
+  setProvisions: (p: Record<ProvisionsCategorie, Record<number, number>>) => void
 
   getPropertyValue: (date: string, scenario: ScenarioKey) => number
   getCashFlowCumule: (date: string) => number
@@ -191,14 +225,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [chargesAnnuelles, setChargesAnnuelles] = useState(DEFAULT_CHARGES_ANNUELLES)
   const [chargesExcept2025, setChargesExcept2025] = useState(DEFAULT_CHARGES_EXCEPT_2025)
   const [gainsFiscaux, setGainsFiscaux] = useState<Record<number, number>>(DEFAULT_GAINS_FISCAUX)
+  const [provisions, setProvisions] = useState<Record<ProvisionsCategorie, Record<number, number>>>(DEFAULT_PROVISIONS)
 
   const state: DataState = useMemo(() => ({
-    annualRates, cashflowResident, loyer, chargesAnnuelles, chargesExcept2025, gainsFiscaux,
-  }), [annualRates, cashflowResident, loyer, chargesAnnuelles, chargesExcept2025, gainsFiscaux])
+    annualRates, cashflowResident, loyer, chargesAnnuelles, chargesExcept2025, gainsFiscaux, provisions,
+  }), [annualRates, cashflowResident, loyer, chargesAnnuelles, chargesExcept2025, gainsFiscaux, provisions])
 
   const ctx: DataContextType = useMemo(() => ({
-    annualRates, cashflowResident, loyer, chargesAnnuelles, chargesExcept2025, gainsFiscaux,
-    setAnnualRates, setCashflowResident, setLoyer, setChargesAnnuelles, setChargesExcept2025, setGainsFiscaux,
+    annualRates, cashflowResident, loyer, chargesAnnuelles, chargesExcept2025, gainsFiscaux, provisions,
+    setAnnualRates, setCashflowResident, setLoyer, setChargesAnnuelles, setChargesExcept2025, setGainsFiscaux, setProvisions,
     getPropertyValue: (date, scenario) => calcPropertyValue(date, scenario, state.annualRates),
     getCashFlowCumule: (date) => calcCashFlowCumule(date, state),
     calcEnrichissement: (date, scenario) => calcEnrichissementFn(date, scenario, state),
