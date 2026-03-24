@@ -1,11 +1,34 @@
 import { NavLink } from 'react-router-dom'
 
-const links = [
+const mainLinks = [
   { to: '/', label: 'Dashboard', icon: '▦' },
   { to: '/timeline', label: 'Timeline', icon: '◎' },
   { to: '/comparateur', label: 'Comparateur', icon: '⇄' },
   { to: '/simulateur', label: 'Simulateur', icon: '◈' },
 ]
+
+const analyseLinks = [
+  { to: '/deepdive/amortissement', label: 'Amortissement', icon: '📊' },
+  { to: '/deepdive/charges', label: 'Charges réelles', icon: '📋' },
+  { to: '/deepdive/fiscal', label: 'Fiscal LMNP', icon: '🧾' },
+  { to: '/deepdive/alternatives', label: 'vs Alternatives', icon: '⚖️' },
+]
+
+const navLinkStyle = ({ isActive }: { isActive: boolean }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  padding: '9px 12px',
+  marginBottom: 2,
+  borderRadius: 8,
+  textDecoration: 'none',
+  color: isActive ? '#f1f5f9' : '#64748b',
+  background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+  fontWeight: isActive ? 600 : 400,
+  fontSize: 13,
+  transition: 'all 0.15s',
+  borderLeft: isActive ? '2px solid #6366f1' : '2px solid transparent',
+})
 
 export default function Sidebar() {
   return (
@@ -21,10 +44,11 @@ export default function Sidebar() {
         position: 'sticky',
         top: 0,
         padding: '24px 0',
+        overflowY: 'auto',
       }}
     >
       {/* Logo */}
-      <div style={{ padding: '0 20px 28px' }}>
+      <div style={{ padding: '0 20px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
@@ -47,34 +71,39 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav links */}
-      <nav style={{ flex: 1, padding: '0 12px' }}>
-        {links.map(link => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.to === '/'}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '10px 12px',
-              marginBottom: 4,
-              borderRadius: 8,
-              textDecoration: 'none',
-              color: isActive ? '#f1f5f9' : '#64748b',
-              background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              fontWeight: isActive ? 600 : 400,
-              fontSize: 14,
-              transition: 'all 0.15s',
-              borderLeft: isActive ? '2px solid #6366f1' : '2px solid transparent',
-            })}
-          >
-            <span style={{ fontSize: 16 }}>{link.icon}</span>
+      {/* Main nav */}
+      <nav style={{ padding: '0 12px' }}>
+        {mainLinks.map(link => (
+          <NavLink key={link.to} to={link.to} end={link.to === '/'} style={navLinkStyle}>
+            <span style={{ fontSize: 15 }}>{link.icon}</span>
             {link.label}
           </NavLink>
         ))}
       </nav>
+
+      {/* Analyses section */}
+      <div style={{ padding: '16px 12px 0' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 12px', marginBottom: 6 }}>
+          Analyses
+        </div>
+        {analyseLinks.map(link => (
+          <NavLink key={link.to} to={link.to} style={navLinkStyle}>
+            <span style={{ fontSize: 14 }}>{link.icon}</span>
+            {link.label}
+          </NavLink>
+        ))}
+      </div>
+
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Settings link */}
+      <div style={{ padding: '0 12px 12px' }}>
+        <NavLink to="/settings" style={navLinkStyle}>
+          <span style={{ fontSize: 15 }}>⚙️</span>
+          Paramètres & Données
+        </NavLink>
+      </div>
 
       {/* Footer card */}
       <div
